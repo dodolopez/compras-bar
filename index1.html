@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia do Bartender & Lista de Compras</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bar: {
+                            900: '#111827',
+                            800: '#1F2937',
+                            gold: '#D97706',
+                            goldlight: '#F59E0B'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #111827;
+            color: #F3F4F6;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1F2937;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4B5563;
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #D97706;
+        }
+
+        /* Animações Iradas */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .glass-gradient {
+            background: linear-gradient(to top, #1F2937 0%, rgba(31, 41, 55, 0.2) 100%);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // --- DADOS DOS DRINKS ---
+        const drinksData = [
+            {
+                id: 'fritzgerald', name: 'Fritzgerald', glass: 'Copo Baixo / Rocks', method: 'Batido (Shake)',
+                image: 'fritzgerald.jpeg',
+                ingredients: ['60ml Gin', '25ml Xarope de Açúcar', '30ml Suco de Limão Siciliano', '2 gotas de Bitter Aromático'],
+                steps: [
+                    'Comece descascando o zeste do limão siciliano.',
+                    'Gele o copo.',
+                    'Na mini tin, adicione o gin, suco de limão, açúcar e o bitter.',
+                    'Coloque 6 pedras de gelo selecionadas e bata rigorosamente.',
+                    'Faça a coagem para o copo baixo com gelo novo.',
+                    'Finalize com o zeste de limão siciliano.'
+                ]
+            },
+            {
+                id: 'ginfizz', name: 'Gin Fizz', glass: 'Copo Collins', method: 'Batido e Montado',
+                image: 'gin fizz.jpeg',
+                ingredients: ['40ml Gin', '25ml Suco de Limão Taiti', '15ml Xarope de Açúcar', 'Água com Gás (completar)'],
+                steps: [
+                    'Coloque gelo no copo Collins para gelar.',
+                    'Na mini tin, coloque o gin, suco, açúcar e 6 pedras de gelo.',
+                    'Bata bem e faça dupla coagem para o copo Collins com gelo novo.',
+                    'Adicione a água com gás devagarinho até quase o topo.',
+                    'Mexe levemente com a colher bailarina puxando de baixo para cima.',
+                    'Finalize com um pedaço de limão e canudo.'
+                ]
+            },
+            {
+                id: 'sexonthebeach', name: 'Sex on the Beach', glass: 'Copo Collins', method: 'Montado no Copo',
+                image: 'sex on the beach.jpeg',
+                ingredients: ['40ml Vodka', '15ml Xarope ou Licor de Pêssego', 'Suco de Laranja', 'Xarope de Grenadine'],
+                steps: [
+                    'Coloque gelo no copo Collins.',
+                    'Adicione a vodka e o xarope de pêssego.',
+                    'Complete com suco de laranja até sobrar um dedo do topo.',
+                    'Adicione um lance (dash) de grenadine para dar o efeito de nascer do sol.',
+                    'Coloque o canudo. O cliente mistura ou vai bebendo subindo os sabores.'
+                ]
+            },
+            {
+                id: 'pinacolada', name: 'Piña Colada', glass: 'Taça Hurricane', method: 'Batido (Shake)',
+                image: 'pina colada.jpeg',
+                ingredients: ['50ml Rum Branco', '30ml Creme ou Leite de Coco', '50ml Suco de Abacaxi', '30ml Xarope de Açúcar'],
+                steps: [
+                    'Prepare a guarnição: corte um triângulo do meio do abacaxi, corte a ponta para encaixar na taça. Pegue uma folha do abacaxi (remova os espinhos da base), dobre ao meio em "S", adicione uma cereja e espete tudo em um palito.',
+                    'Na mini tin, coloque o rum, suco de abacaxi, leite de coco e açúcar.',
+                    'Adicione 6 pedras de gelo e bata bem.',
+                    'Faça dupla coagem para a taça Hurricane cheia de gelo novo.',
+                    'Decore com o palito preparado.'
+                ]
+            },
+            {
+                id: 'alexander', name: 'Alexander', glass: 'Taça Dry / Martini', method: 'Batido (Shake)',
+                image: 'alexander.jpeg',
+                ingredients: ['30ml Conhaque', '30ml Licor de Cacau', '30ml Leite Integral ou Creme de Leite', 'Noz Moscada para ralar'],
+                steps: [
+                    'Encha a taça com gelo e água para gelar.',
+                    'Na mini tin, adicione o conhaque, licor de cacau e o leite.',
+                    'Adicione 6 pedras de gelo e bata rigorosamente.',
+                    'Descarte o gelo da taça e faça dupla coagem para a taça gelada.',
+                    'Rale a noz moscada fresca por cima.'
+                ]
+            },
+            {
+                id: 'cosmopolitan', name: 'Cosmopolitan', glass: 'Taça Dry / Martini', method: 'Batido (Shake)',
+                image: 'cosmopolitan.jpeg',
+                ingredients: ['40ml Vodka (ou Citron)', '15ml Licor de Laranja', '25ml Suco de Limão Siciliano', '40ml Suco de Cranberry'],
+                steps: [
+                    'Gele a taça.',
+                    'Corte um zeste de laranja (deixe-o reto/bonito).',
+                    'Na mini tin, adicione a vodka, cranberry, limão e licor.',
+                    'Adicione 6 pedras de gelo, bata e faça dupla coagem para a taça sem gelo.',
+                    'Flambe a casca de laranja (aperte a casca perto de um isqueiro aceso para o óleo essencial queimar por cima do drink).'
+                ]
+            },
+            {
+                id: 'negroni', name: 'Negroni', glass: 'Copo Baixo / On the Rocks', method: 'Mexido no Copo',
+                image: 'negroni.jpeg',
+                ingredients: ['30ml Gin', '30ml Vermute Rosso (Doce)', '30ml Campari'],
+                steps: [
+                    'Coloque um cubo de gelo grande no copo baixo e mexa para gelar o copo (descarte a água).',
+                    'Adicione o gin, o vermute rosso e o campari.',
+                    'Mexa novamente com a bailarina para gelar e diluir levemente.',
+                    'Decore com um zeste de laranja ou meia-lua de laranja.'
+                ]
+            },
+            {
+                id: 'drymartini', name: 'Dry Martini (ou Dirty)', glass: 'Taça Dry / Martini', method: 'Mexido (Mixing Glass)',
+                image: 'https://images.unsplash.com/photo-1575037614876-c385bbd82f71?auto=format&fit=crop&w=600&q=80',
+                ingredients: ['60ml Gin', '1 colher de Vermute Dry', 'Salmoura de azeitona (se for Dirty)'],
+                steps: [
+                    'Prepare a guarnição: espete 2 azeitonas pela lateral (não pelo caroço).',
+                    'Encha o mixing glass com gelo e mexa para gelar. Descarte a água.',
+                    'Adicione o vermute (mexa e descarte o excesso se quiser mais seco).',
+                    'Adicione o gin (e a salmoura se for Dirty).',
+                    'Mexa bem para gelar e diluir.',
+                    'Faça coagem simples para a taça previamente gelada.',
+                    'Coloque o palito com azeitonas.'
+                ]
+            },
+            {
+                id: 'moscowmule', name: 'Moscow Mule (Versão Espuma)', glass: 'Caneca de Cobre', method: 'Dry Shake + Shake',
+                image: 'moscow mule.jpeg',
+                ingredients: ['30ml Vodka', '30ml Xarope de Gengibre', '30ml Suco Limão Taiti', '15ml Xarope de Açúcar', '5 a 10ml Clara de Ovo'],
+                steps: [
+                    'Coloque gelo na caneca.',
+                    'Na mini tin, adicione vodka, xarope de gengibre, limão, açúcar e clara de ovo.',
+                    'Coloque a mola do coador na coqueteleira e faça o Dry Shake (bater sem gelo) para emulsionar a clara.',
+                    'Abra, retire a mola, adicione gelo e bata novamente (Wet Shake).',
+                    'Faça coagem simples para a caneca com gelo.'
+                ]
+            },
+            {
+                id: 'whiskysour', name: 'Whisky Sour', glass: 'Copo Baixo / On the Rocks', method: 'Reverse Dry Shake',
+                image: 'whisky sour.jpeg',
+                ingredients: ['50ml Whisky', '30ml Suco de Limão Siciliano', '15ml Xarope de Açúcar', '5 a 10ml Clara de Ovo', '3 gotas de Bitter Aromático'],
+                steps: [
+                    'Na coqueteleira, adicione o whisky, limão, açúcar e a clara de ovo.',
+                    'Adicione gelo e bata (Wet Shake).',
+                    'Faça coagem para a mini tin, descarte o gelo da coqueteleira.',
+                    'Coloque a mola e bata novamente sem gelo (Dry Shake) para dar bastante espuma.',
+                    'Vire tudo direto para o copo baixo com gelo novo (sem coar nesta etapa).',
+                    'Pingue 3 gotas de bitter por cima da espuma.',
+                    'Aperte um zeste de laranja ou siciliano por cima para aromatizar.'
+                ]
+            },
+            {
+                id: 'ginbasil', name: 'Gin Basil Smash', glass: 'Copo Baixo / On the Rocks', method: 'Macerado e Batido',
+                image: 'gin basil smash.jpeg',
+                ingredients: ['60ml Gin', '30ml Suco de Limão Siciliano', '25ml Xarope de Açúcar', '8 folhas de Manjericão'],
+                steps: [
+                    'Separe um topinho bonito do manjericão para decorar e coloque gelo no copo para gelar.',
+                    'Na mini tin, coloque as 8 folhas de manjericão e o gin.',
+                    'Macere (amasse) bem o manjericão no gin.',
+                    'Adicione o limão e o xarope de açúcar.',
+                    'Adicione 6 pedras de gelo e bata vigorosamente.',
+                    'Faça dupla coagem (muito importante para não ir pedaços de folha) para o copo com gelo novo.',
+                    'Decore com o topinho de manjericão.'
+                ]
+            },
+            {
+                id: 'mojito', name: 'Mojito', glass: 'Copo Collins', method: 'Montado',
+                image: 'https://images.unsplash.com/photo-1546171753-97d7676e4602?auto=format&fit=crop&w=600&q=80',
+                ingredients: ['40ml Rum Branco', '25ml Suco de Limão Taiti', '15ml Xarope de Açúcar', 'Água com Gás', 'Punhado de Hortelã'],
+                steps: [
+                    'Pegue um punhado de hortelã, dê um tapa nelas para liberar os aromas e coloque no copo.',
+                    'Dê uma leve apertada com o macerador (não destrua as folhas).',
+                    'Adicione o rum, o suco e o açúcar.',
+                    'Coloque a colher bailarina no copo e jogue o gelo por cima dela para não amassar a hortelã no fundo.',
+                    'Mexa puxando a hortelã para cima ("strupando").',
+                    'Complete com água com gás devagar.',
+                    'Dê mais uma leve misturada e decore com um ramo bonito de hortelã.'
+                ]
+            },
+            {
+                id: 'manhattan', name: 'Manhattan', glass: 'Taça Dry / Martini', method: 'Mexido (Mixing Glass)',
+                image: 'https://images.unsplash.com/photo-1609345265499-2133bbeb6ce5?auto=format&fit=crop&w=600&q=80',
+                ingredients: ['50ml Whisky (Bourbon ou Rye)', '30ml Vermute Rosso', '1 dash Bitter Aromático', 'Cereja em conserva'],
+                steps: [
+                    'Gele a taça de Martini com gelo e água.',
+                    'Coloque gelo apenas em cubos no mixing glass e mexa para gelar o vidro. Descarte a água.',
+                    'Adicione o whisky, o vermute rosso e o bitter.',
+                    'Mexa bem para gelar e diluir.',
+                    'Descarte o gelo da taça.',
+                    'Faça coagem simples para a taça.',
+                    'Adicione uma cereja no fundo da taça.'
+                ]
+            },
+            {
+                id: 'gintonica', name: 'Gin Tônica com Especiarias', glass: 'Taça de Gin (Balão)', method: 'Montado',
+                image: 'https://images.unsplash.com/photo-1551751299-1b51cab2694c?auto=format&fit=crop&w=600&q=80',
+                ingredients: ['50ml Gin', 'Especiarias (ex: Canela, Cravo - max 3)', 'Água Tônica', '1 Limão Taiti (Corte Francês)'],
+                steps: [
+                    'Se usar canela em pau, pode dar uma leve queimada nela e jogar na taça vazia primeiro.',
+                    'Adicione as especiarias e esprema o gomo de limão (jogue a casca dentro da taça).',
+                    'Adicione o gin e dê uma mexida para extrair os sabores das especiarias.',
+                    'Encha a taça até o topo com muito gelo.',
+                    'Complete com água tônica despejando devagar (pode usar a colher bailarina para não perder o gás).',
+                    'Dê uma leve puxada de baixo para cima ("strupando") para misturar.'
+                ]
+            }
+        ];
+
+        // --- COMPONENTES ---
+
+        const Icons = {
+            Glass: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2l-3 4h6l-3-4zM7 6v10a5 5 0 0010 0V6H7z"></path></svg>,
+            Check: () => <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>,
+            ShoppingCart: () => <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>,
+            BookOpen: () => <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>,
+            Beaker: () => <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>,
+            ChevronDown: () => <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>,
+            ChevronUp: () => <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"></path></svg>
+        };
+
+        const DrinkCard = ({ drink, index }) => {
+            const [isOpen, setIsOpen] = useState(false);
+
+            return (
+                <div
+                    className="bg-bar-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden group hover:border-bar-gold/50 transition-all duration-300 animate-fade-in-up flex flex-col"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                >
+                    {/* Imagem do Drink com Efeito Hover */}
+                    <div className="relative h-56 overflow-hidden bg-gray-900 cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
+                        <img
+                            src={drink.image}
+                            alt={drink.name}
+                            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                        />
+                        <div className="absolute inset-0 glass-gradient pointer-events-none"></div>
+                        <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-gray-200 border border-gray-600 flex items-center shadow-lg">
+                            <Icons.Glass /> <span className="ml-1">{drink.glass}</span>
+                        </div>
+                    </div>
+
+                    <div className="p-5 flex-1 flex flex-col relative z-10 bg-bar-800">
+                        <div className="flex justify-between items-end mb-3">
+                            <h3 className="text-2xl font-black text-white group-hover:text-bar-goldlight transition-colors">{drink.name}</h3>
+                        </div>
+
+                        <div className="text-xs text-bar-gold mb-4 inline-flex items-center uppercase tracking-wider font-bold">
+                            <span className="bg-bar-900 px-3 py-1.5 rounded border border-bar-gold/30 shadow-inner">{drink.method}</span>
+                        </div>
+
+                        <div className="mt-auto">
+                            <button
+                                onClick={() => setIsOpen(!isOpen)}
+                                className="w-full py-3 bg-gray-700 hover:bg-bar-gold text-white rounded font-bold flex items-center justify-center transition-all duration-300 hover:shadow-[0_0_15px_rgba(217,119,6,0.5)] active:scale-95"
+                            >
+                                {isOpen ? 'Esconder Preparo' : 'Ver Receita Completa'}
+                                {isOpen ? <Icons.ChevronUp /> : <Icons.ChevronDown />}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Área da Receita que expande (Accordion) */}
+                    <div className={`px-5 overflow-hidden transition-all duration-500 ease-in-out bg-gray-900 border-t border-gray-700 ${isOpen ? 'max-h-[800px] py-5 opacity-100' : 'max-h-0 py-0 opacity-0'}`}>
+                        <h4 className="font-bold text-gray-200 mb-3 border-b border-gray-700 pb-2 flex items-center">
+                            <Icons.Beaker /> Ingredientes
+                        </h4>
+                        <ul className="text-sm text-gray-300 mb-5 space-y-2">
+                            {drink.ingredients.map((ing, idx) => (
+                                <li key={idx} className="flex items-start bg-gray-800/50 p-2 rounded border-l-2 border-bar-gold">
+                                    <span className="ml-2">{ing}</span>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <h4 className="font-bold text-gray-200 mb-3 border-b border-gray-700 pb-2 flex items-center">
+                            <Icons.BookOpen /> Passo a Passo
+                        </h4>
+                        <ol className="text-sm text-gray-300 space-y-3">
+                            {drink.steps.map((step, idx) => (
+                                <li key={idx} className="flex items-start">
+                                    <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-bar-gold text-black font-bold text-xs mr-3 mt-0.5">
+                                        {idx + 1}
+                                    </span>
+                                    <span className="leading-relaxed">{step}</span>
+                                </li>
+                            ))}
+                        </ol>
+                    </div>
+                </div>
+            );
+        };
+
+        const ShoppingList = () => {
+            const categories = {
+                "Destilados e Licores": [
+                    "Gin (London Dry - garrafa grande)",
+                    "Vodka de boa qualidade (comprar extra para os preparos caseiros)",
+                    "Rum Branco",
+                    "Whisky (Bourbon ou Rye preferencialmente)",
+                    "Conhaque (Brandy)",
+                    "Vermute Rosso (Doce)",
+                    "Vermute Dry (Seco)",
+                    "Campari",
+                    "Licor de Cacau"
+                ],
+                "Misturadores e Sucos": [
+                    "Água com Gás (várias garrafinhas)",
+                    "Água Tônica (várias latinhas)",
+                    "Suco de Laranja (ou laranjas para espremer)",
+                    "Suco de Abacaxi (ou fruta natural)",
+                    "Suco de Cranberry"
+                ],
+                "Hortifruti (Comprar muito!)": [
+                    "Limão Siciliano (muitos - para suco e zestes)",
+                    "Limão Taiti (muitos - para suco e decorar)",
+                    "Laranja Bahia ou Pera (para suco, zestes e licor caseiro)",
+                    "Hortelã (maço fresco e bonito)",
+                    "Manjericão (maço fresco)",
+                    "Gengibre fresco (uma raiz média/grande)",
+                    "Abacaxi (inteiro para decorar Pina Colada)"
+                ],
+                "Xaropes e Complementos": [
+                    "Xarope ou Licor de Pêssego",
+                    "Xarope de Grenadine (Romã/Frutas Vermelhas)",
+                    "Creme de Coco ou Leite de Coco (garrafinha pequena)",
+                    "Leite Integral ou Creme de Leite (caixinha)"
+                ],
+                "Especiarias e Guarnições": [
+                    "Azeitonas em conserva (com caroço para não murchar, ou recheadas)",
+                    "Cerejas em calda/conserva (com cabinho, se possível)",
+                    "Noz Moscada (em semente inteira para ralar na hora)",
+                    "Canela em pau",
+                    "Cravo da Índia",
+                    "Ovos (precisará de claras frescas)"
+                ],
+                "Insumos para as Receitas Caseiras (DIY)": [
+                    "Açúcar Refinado Branco (compre pelo menos 2kg para os xaropes e licor)",
+                    "Álcool de Cereais (ou Vodka extra - para o bitter)",
+                    "Raiz de Genciana, ou Losna, ou Casca de Toranja seca (para o amargor do bitter)",
+                    "Anis estrelado e Cardamomo (para o bitter)"
+                ]
+            };
+
+            const [checked, setChecked] = useState({});
+
+            const toggleCheck = (item) => {
+                setChecked(prev => ({ ...prev, [item]: !prev[item] }));
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div className="bg-yellow-900 border-l-4 border-yellow-500 p-4 rounded mb-6 text-yellow-100">
+                        <p className="font-bold">Nota sobre a Lista:</p>
+                        <p className="text-sm mt-1">Bitter Angostura, Licor de Laranja, Xarope Simples, Xarope de Gengibre e Sucos de Limão foram removidos desta lista pois você fará em casa. Os insumos para criá-los foram adicionados na aba "Faça em Casa" e nas categorias acima.</p>
+                    </div>
+
+                    {Object.entries(categories).map(([catName, items], index) => (
+                        <div
+                            key={catName}
+                            className="bg-bar-800 rounded-lg p-5 border border-gray-700 animate-fade-in-up hover:border-gray-500 transition-colors shadow-lg"
+                            style={{ animationDelay: `${index * 100}ms` }}
+                        >
+                            <h3 className="text-lg font-bold text-bar-goldlight mb-4 border-b border-gray-700 pb-2 flex items-center">
+                                <Icons.ShoppingCart /> {catName}
+                            </h3>
+                            <ul className="space-y-3">
+                                {items.map(item => (
+                                    <li key={item}
+                                        className="flex items-center cursor-pointer group"
+                                        onClick={() => toggleCheck(item)}
+                                    >
+                                        <div className={`w-5 h-5 mr-3 rounded border flex items-center justify-center transition-colors ${checked[item] ? 'bg-green-500 border-green-500' : 'border-gray-500 group-hover:border-bar-gold'}`}>
+                                            {checked[item] && <Icons.Check />}
+                                        </div>
+                                        <span className={`text-sm ${checked[item] ? 'text-gray-500 line-through' : 'text-gray-200'}`}>
+                                            {item}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+
+        const DIYRecipes = () => {
+            const recipes = [
+                {
+                    title: "Xarope Simples de Açúcar (Simple Syrup 1:1)",
+                    desc: "Base para quase todos os drinks. Usar proporção 1 para 1.",
+                    ing: ["1 xícara de Água", "1 xícara de Açúcar Refinado Branco"],
+                    steps: [
+                        "Em uma panela, adicione a água e o açúcar.",
+                        "Ligue o fogo baixo e mexa constantemente até o açúcar dissolver completamente e a água ficar transparente.",
+                        "Não deixe ferver (para não evaporar a água e alterar a proporção).",
+                        "Desligue, deixe esfriar e guarde em uma garrafa de vidro na geladeira (dura até 30 dias)."
+                    ]
+                },
+                {
+                    title: "Xarope de Gengibre",
+                    desc: "Perfeito para o seu Moscow Mule.",
+                    ing: ["1 xícara de Água", "1 xícara de Açúcar", "1 xícara de Gengibre fresco picado ou ralado"],
+                    steps: [
+                        "Bata no liquidificador a água e o gengibre picado.",
+                        "Coe o líquido em uma panela fina (use um pano limpo se possível para tirar as fibras).",
+                        "Adicione o açúcar no líquido de gengibre na panela.",
+                        "Aqueça em fogo baixo mexendo até dissolver. Não ferva.",
+                        "Espere esfriar, engarrafe e guarde na geladeira."
+                    ]
+                },
+                {
+                    title: "Licor de Laranja (Estilo Cointreau/Triple Sec)",
+                    desc: "Licor cítrico essencial para o Cosmopolitan.",
+                    ing: ["Cascas de 3 Laranjas Bahia (SOMENTE a parte laranja, sem a parte branca que amarga)", "300ml de Vodka", "150ml de Água", "150g de Açúcar"],
+                    steps: [
+                        "Coloque as cascas de laranja e a vodka em um pote de vidro esterilizado e feche bem.",
+                        "Deixe infusionar em local escuro por 5 a 7 dias, agitando o pote uma vez ao dia.",
+                        "Após a infusão, coe a vodka retirando as cascas.",
+                        "Faça um xarope simples aquecendo os 150ml de água com os 150g de açúcar até dissolver. Deixe esfriar completamente.",
+                        "Misture a vodka saborizada de laranja com o xarope frio. Engarrafe."
+                    ]
+                },
+                {
+                    title: "Sucos de Limão (Siciliano e Taiti)",
+                    desc: "Como ter sempre o melhor suco.",
+                    ing: ["Limões frescos"],
+                    steps: [
+                        "Dica de Ouro: Esprema os limões horas antes da festa. Suco de limão envelhecido (4 a 8 horas) fica melhor nos drinks do que o espremido na exata hora.",
+                        "Sempre passe o suco por uma peneira fina para retirar os gominhos e sementes (Coagem Fina).",
+                        "Guarde em garrafas de vidro com bico dosador (" + "pourer" + ") na geladeira."
+                    ]
+                },
+                {
+                    title: "Bitter Aromático Caseiro (Estilo Angostura)",
+                    desc: "A verdadeira Angostura é secreta, mas esta receita cria um bitter fantástico para seu Fritzgerald, Whisky Sour e Manhattan.",
+                    ing: [
+                        "200ml de Vodka ou Álcool de Cereais (acima de 40%)",
+                        "1 colher de sopa de Raiz de Genciana ou Losna (encontra em lojas de produtos naturais. É o que dá o amargor. Se não achar, use cascas de 1 toranja assadas no forno)",
+                        "1 canela em pau, 5 cravos da índia, 2 anis estrelado, 3 sementes de cardamomo amassador",
+                        "Cascas de meia laranja"
+                    ],
+                    steps: [
+                        "Coloque todos os ingredientes sólidos em um pote de vidro pequeno.",
+                        "Cubra com a vodka/álcool de cereais. Feche bem.",
+                        "Deixe descansar em local escuro por 2 semanas, agitando o pote a cada 2 dias.",
+                        "Prove após 14 dias (coloque 1 gota na mão e prove). Se estiver bem amargo e aromático, coe usando um filtro de café.",
+                        "Opcional: para a cor escura característica, derreta 1 colher de açúcar na panela até virar caramelo escuro e misture.",
+                        "Guarde em um frasco conta-gotas."
+                    ]
+                }
+            ];
+
+            return (
+                <div className="space-y-6">
+                    <p className="text-gray-300 text-center mb-8 animate-fade-in-up font-medium text-lg">Fazer seus próprios ingredientes não só economiza dinheiro, mas eleva o nível dos seus drinks para alta coquetelaria.</p>
+
+                    {recipes.map((recipe, idx) => (
+                        <div
+                            key={idx}
+                            className="bg-bar-800 rounded-lg p-6 border border-bar-gold/30 relative overflow-hidden animate-fade-in-up hover:shadow-[0_0_20px_rgba(217,119,6,0.15)] transition-all duration-300 group"
+                            style={{ animationDelay: `${idx * 150}ms` }}
+                        >
+                            <div className="absolute top-0 right-0 w-2 h-full bg-bar-gold group-hover:w-3 transition-all duration-300"></div>
+                            <h3 className="text-xl font-black text-white mb-2">{recipe.title}</h3>
+                            <p className="text-sm text-gray-400 mb-4">{recipe.desc}</p>
+
+                            <h4 className="text-sm font-semibold text-gray-200 mb-2">Ingredientes Necessários:</h4>
+                            <ul className="text-sm text-gray-300 mb-4 list-disc list-inside">
+                                {recipe.ing.map((i, id) => <li key={id}>{i}</li>)}
+                            </ul>
+
+                            <h4 className="text-sm font-semibold text-gray-200 mb-2">Preparo:</h4>
+                            <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside marker:text-bar-gold">
+                                {recipe.steps.map((s, id) => <li key={id}>{s}</li>)}
+                            </ol>
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('drinks');
+
+            return (
+                <div className="min-h-screen bg-bar-900 pb-12">
+                    {/* Header */}
+                    <header className="bg-bar-800 border-b border-gray-700 py-6 px-4 shadow-xl sticky top-0 z-50">
+                        <div className="max-w-4xl mx-auto text-center">
+                            <h1 className="text-4xl font-black text-white tracking-tight uppercase flex items-center justify-center">
+                                <span className="animate-float text-bar-gold"><Icons.Glass /></span>
+                                <span className="mx-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-bar-gold">Menu do Bar</span>
+                                <span className="animate-float text-bar-gold" style={{ animationDelay: '1.5s' }}><Icons.Glass /></span>
+                            </h1>
+                            <p className="text-gray-400 mt-2 text-sm uppercase tracking-widest font-semibold">Seu guia completo para o evento perfeito</p>
+                        </div>
+
+                        {/* Navigation Tabs */}
+                        <div className="max-w-4xl mx-auto mt-6 flex flex-col sm:flex-row gap-3 justify-center px-2">
+                            <button
+                                onClick={() => setActiveTab('drinks')}
+                                className={`flex items-center justify-center px-5 py-3 rounded-lg font-bold transition-all duration-300 ${activeTab === 'drinks' ? 'bg-bar-gold text-white shadow-[0_0_15px_rgba(217,119,6,0.6)] transform scale-105' : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'}`}
+                            >
+                                <Icons.BookOpen /> Menu e Receitas
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('shopping')}
+                                className={`flex items-center justify-center px-5 py-3 rounded-lg font-bold transition-all duration-300 ${activeTab === 'shopping' ? 'bg-bar-gold text-white shadow-[0_0_15px_rgba(217,119,6,0.6)] transform scale-105' : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'}`}
+                            >
+                                <Icons.ShoppingCart /> Lista de Compras
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('diy')}
+                                className={`flex items-center justify-center px-5 py-3 rounded-lg font-bold transition-all duration-300 ${activeTab === 'diy' ? 'bg-bar-gold text-white shadow-[0_0_15px_rgba(217,119,6,0.6)] transform scale-105' : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'}`}
+                            >
+                                <Icons.Beaker /> Faça em Casa (DIY)
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* Main Content Area */}
+                    <main className="max-w-5xl mx-auto mt-8 px-4">
+                        {activeTab === 'drinks' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {drinksData.map((drink, idx) => (
+                                    <DrinkCard key={drink.id} drink={drink} index={idx} />
+                                ))}
+                            </div>
+                        )}
+
+                        {activeTab === 'shopping' && <ShoppingList />}
+
+                        {activeTab === 'diy' && <DIYRecipes />}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
